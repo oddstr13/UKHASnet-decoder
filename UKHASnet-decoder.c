@@ -1,3 +1,5 @@
+//#define USE_CURL
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -7,13 +9,17 @@
 #include <sys/time.h>
 #include <inttypes.h>
 #include <unistd.h> // getopt
+#ifdef USE_CURL
 #include <curl/curl.h>
+#endif
 
 // The identifier of this gateway
 #define GATEWAY_ID "J0"
 
+#ifdef USE_CURL
 // Size of the character buffer to use for curl requests
 #define CURLBUF_SIZE 250
+#endif
 
 // Ukhas protocol layer 1: https://www.ukhas.net/wiki/protocol_details
 #define BIT_RATE 2000
@@ -40,8 +46,11 @@ bool verbose = false;
 // Sink data to the net?
 bool api = false;
 
+// Output only decoded packets
+bool quiet = false;
+
 // Default value assumes a 64kHz sampling rate
-uint16_t sampleRate = 64000;
+uint16_t sampleRate = 8000;
 
 // byte buffers used when sync word has been recognized
 uint8_t byte;
@@ -68,9 +77,11 @@ uint16_t computedCrc = 0x1D0F;
 // packet crc read
 uint16_t readCrc = 0;
 
+#ifdef USE_CURL
 // Use libcurl to submit data to server
 CURL *curl;
 CURLcode res;
+#endif
 // write http responses to /dev/null for now
 FILE *devnull;
 
@@ -98,7 +109,9 @@ void printTime() {
 // process one byte
 bool processByte(uint8_t byte) {
     // Buffer for the post request
+#ifdef USE_CURL
     char curlbuf[CURLBUF_SIZE];
+#endif
     if (len == -1) {
         // read length (does not account for length byte)
         len = (int) byte;
@@ -140,12 +153,16 @@ bool processByte(uint8_t byte) {
         // This seems to be the RFM which has a strange CRC implementation
         readCrc = 0xffff - readCrc;
         if (computedCrc == readCrc) {
-            printTime();
-            printf("PACKET ");
+            if (!quiet) {
+                printTime();
+                printf("PACKET ");
+            }
             for (int i=0; i<len; ++i) {
                 putchar(buffer[i]);
             }
             printf("\n");
+            fflush(stdout);
+#ifdef USE_CURL
             // Curl
             if(curl && api)
             {
@@ -159,9 +176,18 @@ bool processByte(uint8_t byte) {
                 if(res != CURLE_OK)
                     printf("CURL request failed, aborting...\n");
             }
+#endif
         } else if (verbose) {
             printTime();
             printf("CRC mismatch: read(%04X), computed(%04X)\n", readCrc, computedCrc);
+            
+            /*printTime();
+            printf("PACKET ");
+            for (int i=0; i<len; ++i) {
+                putchar(buffer[i]);
+            }
+            printf("\n");*/
+            
         }
     }
     return false;
@@ -204,21 +230,26 @@ void processBit(bool bit) {
 }
 
 int main (int argc, char**argv){
-    printf("UKHAS decoder using rtl_fm\n");
     // parse options
     int opt;
-    while ((opt = getopt(argc, argv, "s:h:v:w")) != -1) {
+    while ((opt = getopt(argc, argv, "hvqws:")) != -1) {
+        //fprintf(stderr, "x:%n\r\n", opt);
         switch (opt) {
             case 's':
                 sampleRate = atoi(optarg);
                 if (sampleRate < 2 * BIT_RATE || sampleRate % BIT_RATE != 0) {
                     fprintf(stderr, "Illegal sampling rate - %d.\n", sampleRate);
                     fprintf(stderr, "Must be over %d Hz and a multiple of %d Hz.\n", 2*BIT_RATE, BIT_RATE);
-                    return 1;
+                    //return 1;
                 }
                 break;
             case 'v':
+                quiet = false;
                 verbose = true;
+                break;
+            case 'q':
+                verbose = false;
+                quiet = true;
                 break;
             case 'w':
                 api = true;
@@ -231,17 +262,21 @@ int main (int argc, char**argv){
                         "\trtl_fm -f 433961890 -s 64k -g 0 -p 162 -r 8000 | ./UKHASnet-decoder -v -s 8000\n"
                         "\t[-s sample_rate in Hz. Above 4kHz and a multiple of 2kHz.]\n"
                         "\t[-w submit data to ukhas.net api]\n"
-                        "\t[-v verbose mode]\n"
+                        "\t[-v verbose mode (negates prev. quiet)]\n"
+                        "\t[-q quiet mode (negates prev. verbose)]\n"
                         "\t[-h this help. Check the code if more needed !]\n\n");
                 return 0;
                 break;
         }
     }
-    printf("Sample rate: %d Hz\n", sampleRate);
-    if (verbose) {
-        printf("Verbose mode\n");
+    if (!quiet) {
+        printf("UKHAS decoder using rtl_fm\n");
+        printf("Sample rate: %d Hz\n", sampleRate);
+        if (verbose) {
+            printf("Verbose mode\n");
+        }
+        printf("\n");
     }
-    printf("\n");
 
     // process samples
     int32_t samples = 0;
@@ -250,6 +285,7 @@ int main (int argc, char**argv){
     int downSamples = sampleRate / BIT_RATE;
     int skipSamples = downSamples;
 
+#ifdef USE_CURL
     // Configure curl if required
     if(api)
     {
@@ -259,6 +295,7 @@ int main (int argc, char**argv){
         devnull = fopen("/dev/null", "w+");
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, devnull);
     }
+#endif
 
     // Read incoming data from dongle
     while(!feof(stdin) ) {
@@ -284,8 +321,10 @@ int main (int argc, char**argv){
     }
     printf("%d samples in %d sec\n", samples, (int) (time(NULL)-start_time));
 
+#ifdef USE_CURL
     // Clean up curl
     curl_easy_cleanup(curl);
     curl_global_cleanup();
+#endif
     return 0;
 }

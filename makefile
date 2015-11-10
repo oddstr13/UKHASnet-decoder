@@ -3,11 +3,14 @@ CC    = gcc
  
 TARGET  = UKHASnet-decoder
 SOURCES = UKHASnet-decoder.c
- 
+
+#CURL=$(if CURL,"-lcurl","")
+CURL=
+
 all: $(TARGET)
 	
 $(TARGET): $(SOURCES)
-	$(CC) -std=gnu99 -o $(TARGET) $(SOURCES) -lcurl
+	$(CC) -std=gnu99 -o $(TARGET) $(SOURCES) $(CURL)
 
 clean:
 	-rm -f $(TARGET) 
