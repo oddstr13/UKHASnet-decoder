@@ -19,7 +19,6 @@ def isValid(data):
         return False
     return True
 
-
 def upload(data):
     if isValid(data):
          res = requests.post(UKHASNET_API_UPLOAD, {
@@ -30,7 +29,19 @@ def upload(data):
 
     return False
 
+def tryUpload(line):
+    try:
+        sys.stdout.write(line)
+        sys.stdout.write(' ')
+        sys.stdout.write(str(upload(line)))
+        sys.stdout.write('\n')
+    except Exception as e:
+        print(e)
+
 if __name__ == "__main__":
+
+    tryUpload("0aV-1[{name}]".format(name=NAME))
+
     while True:
         line = sys.stdin.readline()
         if not line:
@@ -38,10 +49,6 @@ if __name__ == "__main__":
 
         line = line.strip()
         if line:
-            try:
-                print(line)
-                print(upload(line))
-            except Exception as e:
-                print(e)
+            tryUpload(line)
 
 
