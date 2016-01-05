@@ -17,6 +17,8 @@ Get started
 
 `./UKHASnet-decoder -h`
 
+`rtl_fm -f 869500000 -s 64k -g 48 -p 38 -r 8000 | ./UKHASnet-decoder.exe -qs 8000 | ./UKHASnet-upload.py`
+
 TODO (see code for details)
 -------
 - Synchronisation:
