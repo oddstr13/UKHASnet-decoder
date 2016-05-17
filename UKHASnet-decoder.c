@@ -207,7 +207,7 @@ int main (int argc, char**argv){
     printf("UKHAS decoder using rtl_fm\n");
     // parse options
     int opt;
-    while ((opt = getopt(argc, argv, "s:h:v:w")) != -1) {
+    while ((opt = getopt(argc, argv, "hvws:")) != -1) {
         switch (opt) {
             case 's':
                 sampleRate = atoi(optarg);
