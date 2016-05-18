@@ -37,6 +37,9 @@ uint16_t syncBuffer;
 // Output more details (for debug)
 bool verbose = false;
 
+// Output only decoded packets?
+bool quiet = false;
+
 // Sink data to the net?
 bool api = false;
 
@@ -140,12 +143,15 @@ bool processByte(uint8_t byte) {
         // This seems to be the RFM which has a strange CRC implementation
         readCrc = 0xffff - readCrc;
         if (computedCrc == readCrc) {
-            printTime();
-            printf("PACKET ");
+            if (!quiet) {
+                printTime();
+                printf("PACKET ");
+            }
             for (int i=0; i<len; ++i) {
                 putchar(buffer[i]);
             }
             printf("\n");
+            fflush(stdout);
             // Curl
             if(curl && api)
             {
@@ -204,10 +210,9 @@ void processBit(bool bit) {
 }
 
 int main (int argc, char**argv){
-    printf("UKHAS decoder using rtl_fm\n");
     // parse options
     int opt;
-    while ((opt = getopt(argc, argv, "hvws:")) != -1) {
+    while ((opt = getopt(argc, argv, "hvqws:")) != -1) {
         switch (opt) {
             case 's':
                 sampleRate = atoi(optarg);
@@ -218,7 +223,12 @@ int main (int argc, char**argv){
                 }
                 break;
             case 'v':
+                quiet = false;
                 verbose = true;
+                break;
+            case 'q':
+                verbose = false;
+                quiet = true;
                 break;
             case 'w':
                 api = true;
@@ -231,17 +241,21 @@ int main (int argc, char**argv){
                         "\trtl_fm -f 433961890 -s 64k -g 0 -p 162 -r 8000 | ./UKHASnet-decoder -v -s 8000\n"
                         "\t[-s sample_rate in Hz. Above 4kHz and a multiple of 2kHz.]\n"
                         "\t[-w submit data to ukhas.net api]\n"
-                        "\t[-v verbose mode]\n"
+                        "\t[-v verbose mode] (negates prev. quiet)\n"
+                        "\t[-q quiet mode] (negates prev. verbose)\n"
                         "\t[-h this help. Check the code if more needed !]\n\n");
                 return 0;
                 break;
         }
     }
-    printf("Sample rate: %d Hz\n", sampleRate);
-    if (verbose) {
-        printf("Verbose mode\n");
+    if (!quiet) {
+        printf("UKHAS decoder using rtl_fm\n");
+        printf("Sample rate: %d Hz\n", sampleRate);
+        if (verbose) {
+            printf("Verbose mode\n");
+        }
+        printf("\n");
     }
-    printf("\n");
 
     // process samples
     int32_t samples = 0;
@@ -282,7 +296,9 @@ int main (int argc, char**argv){
             //fflush(stdout);
         }
     }
-    printf("%d samples in %d sec\n", samples, (int) (time(NULL)-start_time));
+    if (!quiet) {
+        printf("%d samples in %d sec\n", samples, (int) (time(NULL)-start_time));
+    }
 
     // Clean up curl
     curl_easy_cleanup(curl);
