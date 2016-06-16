@@ -25,7 +25,7 @@ def upload(data):
          res = requests.post(UKHASNET_API_UPLOAD, {
              'origin': NAME,
              'data': data,
-         })
+         }, timeout=15)
          return res.json()
 
     return False
