@@ -3,6 +3,7 @@ import sys
 import requests
 
 NAME = "OS0"
+LOCATION = "62.68,10.03,620"
 
 UKHASNET_API_UPLOAD = "https://ukhas.net/api/upload"
 
@@ -40,7 +41,7 @@ def tryUpload(line):
 
 if __name__ == "__main__":
 
-    tryUpload("0aV-1[{name}]".format(name=NAME))
+    tryUpload("0aV-1L{location}[{name}]".format(name=NAME, location=LOCATION))
 
     while True:
         line = sys.stdin.readline()
