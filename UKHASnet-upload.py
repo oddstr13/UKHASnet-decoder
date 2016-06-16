@@ -1,6 +1,13 @@
 #!/usr/bin/env python
+# -*- coding: utf8 -*-
+# 
+# Dependencies:
+#  * requests
+#  * arrow
+
 import sys
 import requests
+import arrow
 
 NAME = "OS0"
 LOCATION = "62.68,10.03,620"
@@ -32,6 +39,8 @@ def upload(data):
 
 def tryUpload(line):
     try:
+        sys.stdout.write(arrow.now().format("YYYY-MM-DD HH:mm:ss"))
+        sys.stdout.write('\t')
         sys.stdout.write(line)
         sys.stdout.write(' ')
         sys.stdout.write(str(upload(line)))
