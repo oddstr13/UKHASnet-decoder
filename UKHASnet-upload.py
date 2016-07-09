@@ -39,7 +39,7 @@ def upload(data):
 
 def tryUpload(line):
     try:
-        sys.stdout.write(arrow.now().format("YYYY-MM-DD HH:mm:ss"))
+        sys.stdout.write(arrow.now().format("YYYY-MM-DD HH:mm:ss.SSS"))
         sys.stdout.write('\t')
         sys.stdout.write(line)
         sys.stdout.write(' ')
@@ -50,12 +50,17 @@ def tryUpload(line):
 
 if __name__ == "__main__":
 
-    tryUpload("0aV-1L{location}[{name}]".format(name=NAME, location=LOCATION))
+    tryUpload("0aV-1L{location}:rtl-sdr listen-only node started[{name}]".format(name=NAME, location=LOCATION))
 
     while True:
-        line = sys.stdin.readline()
-        if not line:
-            break
+        try:
+            line = sys.stdin.readline()
+            if not line:
+                break
+        except Exception as e:
+            print(e)
+            continue
+
 
         line = line.strip()
         if line:
