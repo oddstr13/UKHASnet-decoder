@@ -39,14 +39,20 @@ def upload(data):
 
 def tryUpload(line):
     try:
-        sys.stdout.write(arrow.now().format("YYYY-MM-DD HH:mm:ss.SSS"))
+        sys.stdout.write(arrow.utcnow().format("YYYY-MM-DD HH:mm:ss.SSS"))
         sys.stdout.write('\t')
         sys.stdout.write(line)
-        sys.stdout.write(' ')
+        sys.stdout.write('\t')
+        sys.stdout.write(NAME)
+        sys.stdout.write('\t')
         sys.stdout.write(str(upload(line)))
         sys.stdout.write('\n')
+        sys.stdout.flush()
     except Exception as e:
-        print(e)
+        sys.stderr.write(str(e))
+        sys.stderr.write('\n')
+        sys.stderr.flush()
+
 
 if __name__ == "__main__":
 
@@ -58,7 +64,9 @@ if __name__ == "__main__":
             if not line:
                 break
         except Exception as e:
-            print(e)
+            sys.stderr.write(str(e))
+            sys.stderr.write('\n')
+            sys.stderr.flush()
             continue
 
 

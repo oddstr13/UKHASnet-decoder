@@ -12,3 +12,13 @@ UKHASnet-decoder.exe
 *.S
 *.so
 *.a
+
+
+# Python binaries
+__pycache__/*
+*.pyc
+
+# Logs and output
+error.log
+db.sqlite
+test.kml
