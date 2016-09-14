@@ -31,16 +31,27 @@ def write_kml(packets, fh=sys.stdout):
 <name>{node}, {start} - {end}</name>
 """.format(node=packets[0].node.name, start=packets[0].received, end=packets[-1].received))
 
-    packetgroups = []
+    entrypoints = {}
     for packet in packets:
-        if (not packetgroups) or (packet.received - packetgroups[-1][-1].received > GROUPDELTA):
-            packetgroups.append([packet])
+        entrypoint = packet.hops[0] if packet.hops else packet.gateway
+        if entrypoint not in entrypoints:
+            entrypoints[entrypoint] = []
+
+        if (not entrypoints[entrypoint]) or (packet.received - entrypoints[entrypoint][-1][-1].received > GROUPDELTA):
+            entrypoints[entrypoint].append([packet])
             continue
-        packetgroups[-1].append(packet)
+        entrypoints[entrypoint][-1].append(packet)
     pnum = 0
     avglat = Decimal(0)
     avglon = Decimal(0)
-    for group in packetgroups:
+
+    for entrypoint in entrypoints:
+      packetgroups = entrypoints[entrypoint]
+      fh.write("""<Folder>
+  <name>{entrypoint}</name>
+
+""".format(entrypoint=entrypoint.name))
+      for group in packetgroups:
         fh.write("""<Folder>
   <name>{start} - {end}</name>
 
@@ -87,6 +98,8 @@ RSSI: <em>{rssi}</em></description>
     color=int(0xff-parsed['sensordata'].get('R', [0])[0])
 ))
         fh.write("""</Folder>
+""")
+      fh.write("""</Folder>
 """)
 
     fh.write("""<LookAt>
