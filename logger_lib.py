@@ -84,7 +84,7 @@ def parsePacket(data):
         '[' in data,
         data[-1] == ']',
         data[-2] != '['
-    ), InvalidPacket("Basic packet structure not matching 3a[n]")
+    ), InvalidPacket("Basic packet structure not matching 3a[n]: '{data}'".format(data=data))
 
     hops_left = int(data[0])
     sequence = data[1]

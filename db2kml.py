@@ -57,7 +57,11 @@ def write_kml(packets, fh=sys.stdout):
 
 """.format(node=group[0].node.name, start=group[0].received, end=group[-1].received))
         for packet in group:
-            parsed = parsePacket(packet.data)
+            try:
+                parsed = parsePacket(packet.data)
+            except Exception as e:
+                print(e)
+                continue # Skip packets that can't be parsed.
             if parsed['sensordata'].get('L', None) is None or len(parsed['sensordata'].get('L',[])) < 2:
                 continue # Skip packets without location
             latitude = parsed['sensordata'].get('L')[0]
